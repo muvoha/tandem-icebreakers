@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tandem-Abend Türkisch & Deutsch</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { red: '#E11D48', dark: '#0F172A', teal: '#0D9488' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .card-pop {
+            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans selection:bg-red-500 selection:text-white">
+
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-2xl mx-auto px-4 py-2.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="flex -space-x-1 overflow-hidden">
+                    <span id="flagIconDE" class="inline-block w-7 h-7 rounded-full bg-slate-900 text-yellow-400 text-xs font-black flex items-center justify-center border-2 border-white shadow-sm">DE</span>
+                    <span id="flagIconTR" class="inline-block w-7 h-7 rounded-full bg-red-600 text-white text-xs font-black flex items-center justify-center border-2 border-white shadow-sm">TR</span>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold leading-tight text-slate-900" id="headerTitle">Tandem-Abend</h1>
+                    <p class="text-xs text-slate-500 font-medium" id="headerSub">Türkçe & Deutsch</p>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-2">
+                <!-- Data Manager Button -->
+                <button onclick="toggleModal('dataModal')" class="p-2 text-slate-600 hover:text-red-600 hover:bg-slate-100 rounded-xl transition" title="Database Manager">
+                    <i class="fa-solid fa-database text-base"></i>
+                </button>
+
+                <!-- Dedicated Language Switch Toggle with directional labels -->
+                <button id="langToggleBtn" onclick="toggleLanguage()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition shadow-sm active:scale-95">
+                    <i class="fa-solid fa-right-left text-amber-400 text-xs"></i>
+                    <span id="langToggleText" class="font-mono font-black">DE &rarr; TR</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-2xl w-full mx-auto px-4 py-3 flex flex-col space-y-3">
+        
+        <!-- Difficulty Filter & Bookmark Toggle -->
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 custom-scrollbar" id="difficultyPills">
+                <button onclick="setDifficulty('all')" id="btn-diff-all" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900 text-white shadow-sm transition">
+                    <span id="lblDiffAll">Alle Stufen</span>
+                </button>
+                <button onclick="setDifficulty('beginner')" id="btn-diff-beginner" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+                    🌱 <span id="lblDiffBeg">Anfänger</span>
+                </button>
+                <button onclick="setDifficulty('intermediate')" id="btn-diff-intermediate" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+                    🔥 <span id="lblDiffInt">Mittelstufe</span>
+                </button>
+                <button onclick="setDifficulty('advanced')" id="btn-diff-advanced" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+                    🚀 <span id="lblDiffAdv">Fortgeschritten</span>
+                </button>
+            </div>
+
+            <button id="favFilterBtn" onclick="toggleFavFilter()" class="px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:text-amber-500 flex items-center space-x-1 transition flex-shrink-0 shadow-sm">
+                <i class="fa-solid fa-star text-amber-400"></i>
+                <span id="favCount">0</span>
+            </button>
+        </div>
+
+        <div id="cardContainer" class="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden relative card-pop flex-1 flex flex-col justify-between">
+            <div class="h-1.5 bg-gradient-to-r from-red-600 via-amber-400 to-emerald-500"></div>
+
+            <div class="p-4 sm:p-5 space-y-4">
+                <!-- Card Header Info -->
+                <div class="flex items-center justify-between text-xs">
+                    <span id="cardLevelBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-lg font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        🌱 Anfänger
+                    </span>
+                    <div class="flex items-center space-x-3 text-slate-400">
+                        <button id="bookmarkBtn" onclick="toggleCurrentBookmark()" class="p-1 hover:text-amber-400 transition" title="Bookmark">
+                            <i id="bookmarkIcon" class="fa-regular fa-star text-lg"></i>
+                        </button>
+                        <span id="questionCounter" class="font-mono text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-md">1 / 50</span>
+                    </div>
+                </div>
+
+                <!-- Active Question Section (Compact layout, no top empty space) -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black uppercase tracking-wider text-slate-400" id="lblQuestionHeader">Frage</span>
+                        <button onclick="speakText()" class="text-slate-500 hover:text-red-600 text-xs px-2.5 py-1 bg-slate-50 hover:bg-red-50 rounded-lg transition border border-slate-200 flex items-center space-x-1" title="Audio Pronunciation">
+                            <i class="fa-solid fa-volume-high text-xs"></i>
+                            <span class="font-bold" id="lblAudioBtn">Anhören</span>
+                        </button>
+                    </div>
+                    <h2 id="activeQuestionText" class="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
+                        Frage wird geladen...
+                    </h2>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <!-- Active Answer Scaffold Section -->
+                <div class="space-y-1.5">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
+                        <i class="fa-solid fa-comment-dots mr-1.5 text-slate-400"></i>
+                        <span id="lblAnswerHeader">Antwort-Vorlage</span>
+                    </h3>
+                    <div class="p-3 bg-amber-50/70 rounded-xl border border-amber-200 text-slate-900 text-sm sm:text-base font-semibold leading-relaxed">
+                        <span id="activeAnswerText">Antwortvorlage wird geladen...</span>
+                    </div>
+                </div>
+
+                <!-- Vocabulary Suggestions Chips -->
+                <div class="space-y-1.5">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-1.5"></i>
+                        <span id="lblVocabHeader">Wortschatz-Hilfe</span>
+                    </h3>
+                    <div id="vocabContainer" class="flex flex-wrap gap-1.5">
+                        <!-- Dynamically generated vocabulary chips -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Bottom Actions -->
+            <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex items-center justify-between gap-3 mt-2">
+                <button onclick="prevQuestion()" class="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl font-bold text-xs sm:text-sm text-slate-700 transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                    <span id="btnPrevText">Zurück</span>
+                </button>
+                
+                <button onclick="nextQuestion()" class="flex-1 sm:flex-initial px-5 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-md hover:shadow-lg flex items-center justify-center space-x-1.5 active:scale-95">
+                    <span id="btnNextText">Nächste Frage</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="dataModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-database text-amber-400"></i>
+                    <h3 class="font-bold text-base sm:text-lg">Fragen-Datenbank Verwalten</h3>
+                </div>
+                <button onclick="toggleModal('dataModal')" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar text-sm text-slate-700">
+                <p>
+                    Erweitern Sie die Fragenliste für Ihre Tandem-Gruppe, exportieren Sie Datensätze als JSON/CSV oder laden Sie Ihre eigenen Fragensammlungen hoch.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button onclick="exportData('json')" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl flex items-center justify-center space-x-2 border border-slate-300 transition">
+                        <i class="fa-solid fa-file-code text-blue-600"></i>
+                        <span>Export JSON</span>
+                    </button>
+                    <button onclick="exportData('csv')" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl flex items-center justify-center space-x-2 border border-slate-300 transition">
+                        <i class="fa-solid fa-file-csv text-emerald-600"></i>
+                        <span>Export CSV</span>
+                    </button>
+                    <label class="px-3 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-xl flex items-center justify-center space-x-2 border border-red-200 cursor-pointer transition">
+                        <i class="fa-solid fa-upload"></i>
+                        <span>JSON Importieren</span>
+                        <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importJSON(event)">
+                    </label>
+                </div>
+
+                <hr class="border-slate-200">
+
+                <form id="addQuestionForm" onsubmit="addNewQuestion(event)" class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <h4 class="font-bold text-slate-900 text-sm flex items-center">
+                        <i class="fa-solid fa-plus-circle text-red-600 mr-2"></i> Neue Frage Hinzufügen
+                    </h4>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Schwierigkeitsstufe / Level</label>
+                        <select id="newLevel" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-red-500 outline-none">
+                            <option value="beginner">Anfänger / Başlangıç</option>
+                            <option value="intermediate">Mittelstufe / Orta</option>
+                            <option value="advanced">Fortgeschritten / İleri</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Frage (Deutsch)</label>
+                            <input type="text" id="newDeQ" required placeholder="z.B. Was ist dein Lieblingsgericht?" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Soru (Türkçe)</label>
+                            <input type="text" id="newTrQ" required placeholder="ör. En sevdiğin yemek nedir?" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Antwort-Vorlage (Deutsch)</label>
+                            <input type="text" id="newDeA" required placeholder="Mein Lieblingsgericht ist..." class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Cevap Şablonu (Türkçe)</label>
+                            <input type="text" id="newTrA" required placeholder="En sevdiğim yemek..." class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Wortschatz DE (Kommagetrennt)</label>
+                            <input type="text" id="newDeVocab" placeholder="Suppe, Reis, Fleisch" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Kelime TR (Virgülle ayrılmış)</label>
+                            <input type="text" id="newTrVocab" placeholder="Çorba, Pirinç, Et" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs transition">
+                        Frage Speichern
+                    </button>
+                </form>
+
+                <div class="flex items-center justify-between pt-2">
+                    <span id="dbTotalCount" class="text-xs font-semibold text-slate-500">Gesamt: 50 Fragen</span>
+                    <button onclick="resetDataset()" class="text-xs text-rose-600 hover:underline font-semibold">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Auf Standard zurücksetzen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 50 Questions Dataset with separated monolingual fields
+        const DEFAULT_QUESTIONS = [
+            // BEGINNER QUESTIONS (1 to 20)
+            { id: 1, level: "beginner", de_q: "Wie ist das Wetter heute?", tr_q: "Bugün hava nasıl?", de_a: "Heute ist das Wetter...", tr_a: "Bugün hava...", de_vocab: ["sonnig", "wolkig", "kalt", "warm"], tr_vocab: ["güneşli", "bulutlu", "soğuk", "sıcak"] },
+            { id: 2, level: "beginner", de_q: "Was sind deine Hobbys?", tr_q: "Hobilerin nelerdir?", de_a: "Meine Hobbys sind...", tr_a: "Benim hobilerim...", de_vocab: ["Lesen", "Schwimmen", "Musik hören", "Reisen"], tr_vocab: ["Okumak", "Yüzmek", "Müzik dinlemek", "Seyahat etmek"] },
+            { id: 3, level: "beginner", de_q: "Was trinkst du am liebsten im Café?", tr_q: "Kafede en çok ne içmeyi seversin?", de_a: "Ich trinke am liebsten...", tr_a: "En çok ... içmeyi severim.", de_vocab: ["Kaffee", "Tee", "Türkischer Kaffee", "Wasser"], tr_vocab: ["Kahve", "Çay", "Türk kahvesi", "Su"] },
+            { id: 4, level: "beginner", de_q: "Hast du Geschwister oder Haustiere?", tr_q: "Kardeşin veya evcil hayvanın var mı?", de_a: "Ich habe...", tr_a: "Benim ... var/yok.", de_vocab: ["einen Bruder", "eine Schwester", "eine Katze", "einen Hund"], tr_vocab: ["bir erkek kardeş", "bir kız kardeş", "bir kedi", "bir köpek"] },
+            { id: 5, level: "beginner", de_q: "Wo wohnst du aktuell?", tr_q: "Şu an nerede yaşıyorsun?", de_a: "Ich wohne in...", tr_a: "...'da/de yaşıyorum.", de_vocab: ["im Stadtzentrum", "in der Nähe vom Bahnhof", "in einer WG"], tr_vocab: ["şehir merkezinde", "istasyonun yakınında", "öğrenci evinde"] },
+            { id: 6, level: "beginner", de_q: "Was ist deine Lieblingsjahreszeit?", tr_q: "En sevdiğin mevsim hangisi?", de_a: "Meine Lieblingsjahreszeit ist...", tr_a: "En sevdiğim mevsim...", de_vocab: ["der Frühling", "der Sommer", "der Herbst", "der Winter"], tr_vocab: ["İlkbahar", "Yaz", "Sonbahar", "Kış"] },
+            { id: 7, level: "beginner", de_q: "Sprichst du noch andere Sprachen?", tr_q: "Başka diller konuşuyor musun?", de_a: "Ja, ich spreche auch...", tr_a: "Evet, ayrıca ... konuşuyorum.", de_vocab: ["Englisch", "Spanisch", "ein wenig"], tr_vocab: ["İngilizce", "İspanyolca", "biraz"] },
+            { id: 8, level: "beginner", de_q: "Stehst du früh auf oder bist du eine Nachteule?", tr_q: "Erken mi kalkarsın yoksa gece kuşu musun?", de_a: "Ich bin eher...", tr_a: "Ben daha çok...", de_vocab: ["der Frühaufsteher", "die Nachteule"], tr_vocab: ["erkenci", "gece kuşu"] },
+            { id: 9, level: "beginner", de_q: "Was isst du meistens zum Frühstück?", tr_q: "Kahvaltıda genellikle ne yersin?", de_a: "Zum Frühstück esse ich...", tr_a: "Kahvaltıda ... yerim.", de_vocab: ["Brot mit Käse", "Oliven & Eier", "Müsli"], tr_vocab: ["Peynirli ekmek", "Zeytin ve yumurta", "Yulaf ezmesi"] },
+            { id: 10, level: "beginner", de_q: "Fährst du lieber mit dem Fahrrad oder dem Bus?", tr_q: "Bisiklete binmeyi mi yoksa otobüse binmeyi mi tercih edersin?", de_a: "Ich fahre lieber mit...", tr_a: "Ben ... tercih ederim.", de_vocab: ["das Fahrrad", "die U-Bahn", "zu Fuß gehen"], tr_vocab: ["bisiklet", "metro", "yürümek"] },
+            { id: 11, level: "beginner", de_q: "Was ist deine Lieblingsfarbe?", tr_q: "En sevdiğin renk nedir?", de_a: "Meine Lieblingsfarbe ist...", tr_a: "En sevdiğim renk...", de_vocab: ["Blau", "Rot", "Grün", "Gelb"], tr_vocab: ["Mavi", "Kırmızı", "Yeşil", "Sarı"] },
+            { id: 12, level: "beginner", de_q: "Arbeitest du oder studierst du?", tr_q: "Çalışıyor musun yoksa okuyor musun?", de_a: "Ich bin...", tr_a: "Ben...", de_vocab: ["Student / Studentin", "berufstätig", "auf Arbeitssuche"], tr_vocab: ["Öğrenci", "Çalışan", "İş arayan"] },
+            { id: 13, level: "beginner", de_q: "Magst du scharfes Essen?", tr_q: "Acı yemek sever misin?", de_a: "Ich esse...", tr_a: "Ben acı...", de_vocab: ["sehr gerne scharf", "überhaupt nicht scharf", "manchmal"], tr_vocab: ["çok acı severim", "hiç acı sevmem", "bazen"] },
+            { id: 14, level: "beginner", de_q: "Was machst du heute Abend?", tr_q: "Bu akşam ne yapıyorsun?", de_a: "Heute Abend werde ich...", tr_a: "Bu akşam...", de_vocab: ["nach Hause gehen", "Freunde treffen", "schlafen"], tr_vocab: ["eve gitmek", "arkadaşlarla buluşmak", "uyumak"] },
+            { id: 15, level: "beginner", de_q: "Tee oder Kaffee?", tr_q: "Çay mı kahve mi?", de_a: "Ich bevorzuge...", tr_a: "Ben ... tercih ederim.", de_vocab: ["Schwarztee", "Filterkaffee", "Pfefferminztee"], tr_vocab: ["Siyah çay", "Filtre kahve", "Nane çayı"] },
+            { id: 16, level: "beginner", de_q: "Wann stehst du morgens meistens auf?", tr_q: "Sabahları genellikle ne zaman kalkarsın?", de_a: "Ich stehe um ... Uhr auf.", tr_a: "Saat ...'de kalkarım.", de_vocab: ["um 7 Uhr", "spät", "pünktlich"], tr_vocab: ["saat 7'de", "geç", "zamanında"] },
+            { id: 17, level: "beginner", de_q: "Hörst du gerne Musik beim Lernen?", tr_q: "Ders çalışırken müzik dinler misin?", de_a: "Beim Lernen...", tr_a: "Çalışırken...", de_vocab: ["brauche ich Ruhe", "höre ich klassische Musik"], tr_vocab: ["sessizliğe ihtiyacım var", "klasik müzik dinlerim"] },
+            { id: 18, level: "beginner", de_q: "Wie lange lernst du schon Deutsch oder Türkisch?", tr_q: "Ne kadar süredir Almanca veya Türkçe öğreniyorsun?", de_a: "Ich lerne seit...", tr_a: "...'den/dan beri öğreniyorum.", de_vocab: ["einem Monat", "einem Jahr", "zwei Jahren"], tr_vocab: ["bir aydır", "bir yıldır", "iki yıldır"] },
+            { id: 19, level: "beginner", de_q: "Spielst du ein Musikinstrument?", tr_q: "Bir müzik aleti çalıyor musun?", de_a: "Ich spiele...", tr_a: "... çalıyorum.", de_vocab: ["Gitarre", "Klavier", "Saz / Bağlama"], tr_vocab: ["Gitar", "Piyano", "Bağlama"] },
+            { id: 20, level: "beginner", de_q: "Gehst du gerne im Park spazieren?", tr_q: "Parkta yürüyüş yapmayı sever misin?", de_a: "Ja, ich gehe gerne...", tr_a: "Evet, ... yürümeyi severim.", de_vocab: ["jeden Tag", "am Wochenende", "selten"], tr_vocab: ["her gün", "hafta sonu", "nadir"] },
+
+            // INTERMEDIATE QUESTIONS (21 to 35)
+            { id: 21, level: "intermediate", de_q: "Warum lernst du Deutsch bzw. Türkisch?", tr_q: "Neden Almanca veya Türkçe öğreniyorsun?", de_a: "Ich lerne die Sprache, weil...", tr_a: "Bu dili öğreniyorum çünkü...", de_vocab: ["für das Studium", "für Reisen", "aus Interesse an der Kultur"], tr_vocab: ["okul / iş için", "seyahat için", "kültür ilgisinden dolayı"] },
+            { id: 22, level: "intermediate", de_q: "Was war deine schönste Reise bisher?", tr_q: "Şimdiye kadarki en güzel seyahatin hangisiydi?", de_a: "Meine schönste Reise war nach...", tr_a: "En güzel seyahatim ...'a/e idi.", de_vocab: ["das Meer", "die Berge", "historische Orte"], tr_vocab: ["deniz", "dağlar", "tarihi yerler"] },
+            { id: 23, level: "intermediate", de_q: "Welche Serie oder welchen Film kannst du empfehlen?", tr_q: "Hangi diziyi veya filmi tavsiye edersin?", de_a: "Ich empfehle...", tr_a: "... tavsiye ederim.", de_vocab: ["spannend", "lustig", "die Komödie"], tr_vocab: ["heyecanlı", "komik", "komedi"] },
+            { id: 24, level: "intermediate", de_q: "Kochst du gerne selbst oder gehst du lieber ins Restaurant?", tr_q: "Yemek yapmayı mı seversin yoksa restorana gitmeyi mi?", de_a: "Ich finde es besser...", tr_a: "Bence ... daha güzel.", de_vocab: ["selbst kochen", "neue Gerichte ausprobieren"], tr_vocab: ["kendi yemeğini yapmak", "yeni yemekler denemek"] },
+            { id: 25, level: "intermediate", de_q: "Was machst du normalerweise an einem freien Sonntag?", tr_q: "Boş bir pazar gününde genellikle ne yaparsın?", de_a: "An einem Sonntag...", tr_a: "Pazar günleri...", de_vocab: ["spazieren gehen", "Freunde treffen", "entspannen"], tr_vocab: ["yürüyüşe çıkmak", "arkadaşlarla buluşmak", "dinlenmek"] },
+            { id: 26, level: "intermediate", de_q: "Welche Musikrichtung hörst du am liebsten?", tr_q: "En çok hangi müzik türünü dinlersin?", de_a: "Ich höre am liebsten...", tr_a: "En çok ... dinlerim.", de_vocab: ["Pop / Rock", "Klassik", "Indie"], tr_vocab: ["Pop / Rock", "Klasik müzik", "Bağımsız müzik"] },
+            { id: 27, level: "intermediate", de_q: "Welche Eigenschaft schätzt du an deinen Freunden am meisten?", tr_q: "Arkadaşlarından en çok hangi özelliğe değer verirsin?", de_a: "Für mich ist wichtig, dass...", tr_a: "Benim için ... olması önemlidir.", de_vocab: ["Ehrlichkeit", "Humor", "Hilfsbereitschaft"], tr_vocab: ["Dürüstlük", "Mizah anlayışı", "Yardımseverlik"] },
+            { id: 28, level: "intermediate", de_q: "Was möchtest du dieses Jahr unbedingt noch lernen?", tr_q: "Bu yıl kesinlikle öğrenmek istediğin şey nedir?", de_a: "Dieses Jahr möchte ich...", tr_a: "Bu yıl ... öğrenmek istiyorum.", de_vocab: ["ein Instrument spielen", "eine Sprache verbessern"], tr_vocab: ["bir enstrüman çalmak", "bir dili geliştirmek"] },
+            { id: 29, level: "intermediate", de_q: "Welches Buch hat dich besonders geprägt?", tr_q: "Hangi kitap seni özellikle etkiledi?", de_a: "Das Buch ... hat mich sehr beeindruckt.", tr_a: "... kitabı beni çok etkiledi.", de_vocab: ["der Roman", "die Biografie", "die Geschichte"], tr_vocab: ["roman", "biyografi", "hikaye"] },
+            { id: 30, level: "intermediate", de_q: "Gibt es ein traditionelles Fest, das du besonders magst?", tr_q: "Özellikle sevdiğin geleneksel bir bayram var mı?", de_a: "Ich mag besonders...", tr_a: "En çok ... severim.", de_vocab: ["das Zuckerfest", "Weihnachten / Silvester"], tr_vocab: ["Ramazan Bayramı", "Noel / Yılbaşı"] },
+            { id: 31, level: "intermediate", de_q: "Was ist dein deutsches oder türkisches Lieblingswort?", tr_q: "En sevdiğin Almanca veya Türkçe kelime nedir?", de_a: "Mein Lieblingswort ist...", tr_a: "En sevdiğim kelime...", de_vocab: ["Kuddelmuddel", "Gemütlichkeit"], tr_vocab: ["Karmaşa", "Yakamoz"] },
+            { id: 32, level: "intermediate", de_q: "Bist du schon einmal in der Türkei oder in Deutschland gewesen?", tr_q: "Daha önce Türkiye'de veya Almanya'da bulundun mu?", de_a: "Ja, ich war schon in...", tr_a: "Evet, daha önce ...'da bulundum.", de_vocab: ["Istanbul / Izmir", "Berlin / München"], tr_vocab: ["İstanbul / İzmir", "Berlin / Münih"] },
+            { id: 33, level: "intermediate", de_q: "Wie verbringst du am liebsten deinen Urlaub?", tr_q: "Tatilini en çok nasıl geçirmeyi seversin?", de_a: "Im Urlaub...", tr_a: "Tatilde...", de_vocab: ["am Strand liegen", "Städte erkunden"], tr_vocab: ["plajda yatmak", "şehirleri keşfetmek"] },
+            { id: 34, level: "intermediate", de_q: "Was hilft dir am meisten beim Sprachenlernen?", tr_q: "Dil öğrenirken sana en çok ne yardımcı oluyor?", de_a: "Mir hilft besonders...", tr_a: "Bana özellikle ... yardımcı oluyor.", de_vocab: ["Filme schauen", "Sprechen im Tandem"], tr_vocab: ["film izlemek", "tandemde konuşmak"] },
+            { id: 35, level: "intermediate", de_q: "Welches Essen kannst du selbst am besten kochen?", tr_q: "Kendi yaptığın en iyi yemek hangisi?", de_a: "Ich koche sehr gut...", tr_a: "En iyi ... yaparım.", de_vocab: ["Linsensuppe", "Nudeln mit Soße"], tr_vocab: ["Mercimek çorbası", "Soslu makarna"] },
+
+            // ADVANCED QUESTIONS (36 to 50)
+            { id: 36, level: "advanced", de_q: "Welche kulturellen Unterschiede zwischen Deutschland und der Türkei findest du spannend?", tr_q: "Almanya ve Türkiye arasındaki hangi kültürel farklılıkları ilgi çekici buluyorsun?", de_a: "Ein interessanter Unterschied ist meiner Meinung nach...", tr_a: "Bence ilgi çekici bir fark...", de_vocab: ["Gastfreundschaft", "Pünktlichkeit", "Teekultur"], tr_vocab: ["Misafirperverlik", "Disiplin", "Çay kültürü"] },
+            { id: 37, level: "advanced", de_q: "Wie beeinflussen soziale Medien unserer Meinung nach die menschliche Kommunikation?", tr_q: "Sosyal medya sizce insan iletişimini nasıl etkiliyor?", de_a: "Ich glaube, dass soziale Medien...", tr_a: "Bence sosyal medya...", de_vocab: ["Vorteile und Nachteile", "Schneller Austausch"], tr_vocab: ["Avantajlar ve dezavantajlar", "Hızlı iletişim"] },
+            { id: 38, level: "advanced", de_q: "Wenn du ein gesellschaftliches Problem lösen könntest, welches wäre das?", tr_q: "Toplumsal bir sorunu çözebilseydin, bu ne olurdu?", de_a: "Ich würde mich für ... einsetzen.", tr_a: "... için mücadele ederdim.", de_vocab: ["Chancengleichheit", "Klimaschutz", "Bildung für alle"], tr_vocab: ["Fırsat eşitliği", "İklim koruması", "Herkes için eğitim"] },
+            { id: 39, level: "advanced", de_q: "Bedeutet Erfolg für jeden Menschen etwas Anderes?", tr_q: "Başarı her insan için farklı bir anlam mı taşır?", de_a: "Erfolg bedeutet für mich persönlich...", tr_a: "Başarı benim için kişisel olarak...", de_vocab: ["Innere Zufriedenheit", "Finanzielle Unabhängigkeit"], tr_vocab: ["İç huzur", "Finansal özgürlük"] },
+            { id: 40, level: "advanced", de_q: "Wie stellst du dir dein Leben in 10 Jahren vor?", tr_q: "10 yıl sonra hayatını nasıl hayal ediyorsun?", de_a: "In 10 Jahren hoffe ich...", tr_a: "10 yıl sonra umarım...", de_vocab: ["Berufliche Ziele", "Ein eigenes Haus"], tr_vocab: ["Kariyer hedefleri", "Kendi evi"] },
+            { id: 41, level: "advanced", de_q: "Was macht ein gutes Leben aus?", tr_q: "İyi bir hayatı oluşturan şeyler nelerdir?", de_a: "Ein gutes Leben besteht für mich aus...", tr_a: "İyi bir hayat benim için ... oluşur.", de_vocab: ["Gesundheit", "Echte Freundschaften", "Freiheit"], tr_vocab: ["Sağlık", "Gerçek dostluklar", "Özgürlük"] },
+            { id: 42, level: "advanced", de_q: "Glaubst du, dass Künstliche Intelligenz unsere Arbeit grundlegend verändern wird?", tr_q: "Yapay zekanın iş yapış şeklimizi kökten değiştireceğine inanıyor musun?", de_a: "Ich denke, dass KI...", tr_a: "Bence yapay zeka...", de_vocab: ["Arbeitsplätze vereinfachen", "Neue Berufe schaffen"], tr_vocab: ["İşleri kolaylaştırmak", "Yeni meslekler yaratmak"] },
+            { id: 43, level: "advanced", de_q: "Welche Rolle spielt Humor im Alltag oder bei Problemen?", tr_q: "Mizahın günlük hayatta veya sorunlarda nasıl bir rolü vardır?", de_a: "Humor hilft mir...", tr_a: "Mizah bana ... yardımcı olur.", de_vocab: ["Stress abbauen", "Perspektive wechseln"], tr_vocab: ["Stresi azaltmak", "Bakış açısını değiştirmek"] },
+            { id: 44, level: "advanced", de_q: "Inwiefern prägt die Muttersprache unser Denken?", tr_q: "Ana dilimiz düşünce yapımızı ne ölçüde şekillendirir?", de_a: "Die Sprache beeinflusst...", tr_a: "Dil ... etkiler.", de_vocab: ["Denkmuster", "Gefühlsausdruck"], tr_vocab: ["Düşünce kalıpları", "Duygu ifadesi"] },
+            { id: 45, level: "advanced", de_q: "Ist Heimat ein Ort oder ein Gefühl?", tr_q: "Memleket bir yer midir yoksa bir duygu mu?", de_a: "Für mich ist Heimat...", tr_a: "Benim için memleket...", de_vocab: ["Geborgenheit", "Familie und Freunde"], tr_vocab: ["Güven duygusu", "Aile ve arkadaşlar"] },
+            { id: 46, level: "advanced", de_q: "Was war eine wichtige Lektion, die du im Leben gelernt hast?", tr_q: "Hayatta öğrendiğin önemli bir ders neydi?", de_a: "Ich habe gelernt, dass...", tr_a: "Öğrendim ki...", de_vocab: ["Geduld haben", "Fehler akzeptieren"], tr_vocab: ["Sabırlı olmak", "Hataları kabullenmek"] },
+            { id: 47, level: "advanced", de_q: "Wie wichtig ist dir Umweltschutz im Alltag?", tr_q: "Günlük hayatta çevre koruması senin için ne kadar önemli?", de_a: "Im Alltag achte ich auf...", tr_a: "Günlük hayatta ... dikkat ederim.", de_vocab: ["Mülltrennung", "Plastik vermeiden"], tr_vocab: ["Çöp ayrıştırma", "Plastikten kaçınmak"] },
+            { id: 48, level: "advanced", de_q: "Sollte Kunst immer frei sein?", tr_q: "Sanat her zaman özgür olmalı mıdır?", de_a: "Kunst sollte meiner Meinung nach...", tr_a: "Sanat bence...", de_vocab: ["Meinungsfreiheit", "Inspiration"], tr_vocab: ["Fikir özgürlüğü", "İlham"] },
+            { id: 49, level: "advanced", de_q: "Wie geht man am besten mit Veränderungen im Leben um?", tr_q: "Hayattaki değişikliklerle en iyi nasıl başa çıkılır?", de_a: "Bei Veränderungen versuche ich...", tr_a: "Değişimlerde ... çalışırım.", de_vocab: ["Offen bleiben", "Neuanfang wagen"], tr_vocab: ["Açık fikirli kalmak", "Yeni bir başlangıç yapmak"] },
+            { id: 50, level: "advanced", de_q: "Was bedeutet persönliche Freiheit für dich?", tr_q: "Kişisel özgürlük senin için ne anlam ifade ediyor?", de_a: "Freiheit bedeutet, dass...", tr_a: "Özgürlük ... demektir.", de_vocab: ["Eigene Entscheidungen", "Unabhängigkeit"], tr_vocab: ["Kendi kararları", "Bağımsızlık"] }
+        ];
+
+        // State variables
+        let currentQuestions = [...DEFAULT_QUESTIONS];
+        let filteredQuestions = [...currentQuestions];
+        let currentIndex = 0;
+        let selectedDifficulty = 'all';
+        let currentLang = 'de'; // 'de' or 'tr'
+        let favorites = JSON.parse(localStorage.getItem('tandem_favs') || '[]');
+        let onlyFavsMode = false;
+        let availableVoices = [];
+
+        // UI Text translations
+        const UI_STRINGS = {
+            de: {
+                headerTitle: "Tandem-Abend",
+                headerSub: "Türkçe & Deutsch",
+                langToggleText: "DE &rarr; TR",
+                lblDiffAll: "Alle Stufen",
+                lblDiffBeg: "Anfänger",
+                lblDiffInt: "Mittelstufe",
+                lblDiffAdv: "Fortgeschritten",
+                lblQuestionHeader: "Frage",
+                lblAnswerHeader: "Antwort-Vorlage",
+                lblVocabHeader: "Wortschatz-Hilfe",
+                lblAudioBtn: "Anhören",
+                btnPrevText: "Zurück",
+                btnNextText: "Nächste Frage",
+                badgeBeg: "🌱 Anfänger",
+                badgeInt: "🔥 Mittelstufe",
+                badgeAdv: "🚀 Fortgeschritten",
+                emptyVocab: "Keine Wortschatztipps vorhanden"
+            },
+            tr: {
+                headerTitle: "Tandem Akşamı",
+                headerSub: "Türkçe & Almanca",
+                langToggleText: "TR &rarr; DE",
+                lblDiffAll: "Tüm Seviyeler",
+                lblDiffBeg: "Başlangıç",
+                lblDiffInt: "Orta Seviye",
+                lblDiffAdv: "İleri Seviye",
+                lblQuestionHeader: "Soru",
+                lblAnswerHeader: "Cevap Şablonu",
+                lblVocabHeader: "Kelime İpuçları",
+                lblAudioBtn: "Dinle",
+                btnPrevText: "Geri",
+                btnNextText: "Sonraki Soru",
+                badgeBeg: "🌱 Başlangıç",
+                badgeInt: "🔥 Orta Seviye",
+                badgeAdv: "🚀 İleri Seviye",
+                emptyVocab: "Kelime ipucu bulunmuyor"
+            }
+        };
+
+        // On Load Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSavedDataset();
+            applyFilters();
+            initSpeechVoices();
+            renderUI();
+            updateFavCount();
+            updateDbTotalCount();
+        });
+
+        // Load voices asynchronously for SpeechSynthesis
+        function initSpeechVoices() {
+            if ('speechSynthesis' in window) {
+                const updateVoices = () => {
+                    availableVoices = window.speechSynthesis.getVoices();
+                };
+                updateVoices();
+                if (speechSynthesis.onvoiceschanged !== undefined) {
+                    speechSynthesis.onvoiceschanged = updateVoices;
+                }
+            }
+        }
+
+        function loadSavedDataset() {
+            const saved = localStorage.getItem('tandem_questions_custom');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        currentQuestions = parsed;
+                    }
+                } catch(e) {
+                    console.error("Failed to parse custom local dataset", e);
+                    currentQuestions = [...DEFAULT_QUESTIONS];
+                }
+            }
+        }
+
+        function saveDatasetLocally() {
+            localStorage.setItem('tandem_questions_custom', JSON.stringify(currentQuestions));
+            updateDbTotalCount();
+        }
+
+        // Toggle Language Mode (Strict DE or TR with directional indicators)
+        function toggleLanguage() {
+            currentLang = (currentLang === 'de') ? 'tr' : 'de';
+            renderUI();
+        }
+
+        // Filtering
+        function setDifficulty(level) {
+            selectedDifficulty = level;
+            onlyFavsMode = false;
+            
+            document.querySelectorAll('#difficultyPills button').forEach(btn => {
+                btn.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition";
+            });
+
+            const activeBtn = document.getElementById(`btn-diff-${level}`);
+            if (activeBtn) {
+                activeBtn.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900 text-white shadow-sm transition";
+            }
+
+            const favBtn = document.getElementById('favFilterBtn');
+            favBtn.classList.remove('bg-amber-100', 'border-amber-300', 'text-amber-800');
+
+            applyFilters();
+            currentIndex = 0;
+            renderCard();
+        }
+
+        function toggleFavFilter() {
+            onlyFavsMode = !onlyFavsMode;
+            const btn = document.getElementById('favFilterBtn');
+            if (onlyFavsMode) {
+                btn.classList.add('bg-amber-100', 'border-amber-300', 'text-amber-800');
+            } else {
+                btn.classList.remove('bg-amber-100', 'border-amber-300', 'text-amber-800');
+            }
+            applyFilters();
+            currentIndex = 0;
+            renderCard();
+        }
+
+        function applyFilters() {
+            filteredQuestions = currentQuestions.filter(q => {
+                const matchDiff = (selectedDifficulty === 'all' || q.level === selectedDifficulty);
+                const matchFav = !onlyFavsMode || favorites.includes(q.id);
+                return matchDiff && matchFav;
+            });
+        }
+
+        // Main UI Renderer
+        function renderUI() {
+            const strings = UI_STRINGS[currentLang];
+
+            // Set static texts
+            document.getElementById('headerTitle').innerText = strings.headerTitle;
+            document.getElementById('headerSub').innerText = strings.headerSub;
+            document.getElementById('langToggleText').innerHTML = strings.langToggleText;
+
+            document.getElementById('lblDiffAll').innerText = strings.lblDiffAll;
+            document.getElementById('lblDiffBeg').innerText = strings.lblDiffBeg;
+            document.getElementById('lblDiffInt').innerText = strings.lblDiffInt;
+            document.getElementById('lblDiffAdv').innerText = strings.lblDiffAdv;
+
+            document.getElementById('lblQuestionHeader').innerText = strings.lblQuestionHeader;
+            document.getElementById('lblAnswerHeader').innerText = strings.lblAnswerHeader;
+            document.getElementById('lblVocabHeader').innerText = strings.lblVocabHeader;
+            document.getElementById('lblAudioBtn').innerText = strings.lblAudioBtn;
+
+            document.getElementById('btnPrevText').innerText = strings.btnPrevText;
+            document.getElementById('btnNextText').innerText = strings.btnNextText;
+
+            renderCard();
+        }
+
+        function renderCard() {
+            const card = document.getElementById('cardContainer');
+            card.classList.remove('card-pop');
+            void card.offsetWidth;
+            card.classList.add('card-pop');
+
+            const strings = UI_STRINGS[currentLang];
+
+            if (filteredQuestions.length === 0) {
+                document.getElementById('activeQuestionText').innerText = (currentLang === 'de') ? "Keine Fragen gefunden" : "Soru bulunamadı";
+                document.getElementById('activeAnswerText').innerText = "-";
+                document.getElementById('vocabContainer').innerHTML = `<span class="text-xs text-slate-400 italic">${strings.emptyVocab}</span>`;
+                document.getElementById('questionCounter').innerText = "0 / 0";
+                return;
+            }
+
+            const q = filteredQuestions[currentIndex];
+            const isDe = currentLang === 'de';
+
+            // Question & Answer (Strictly Monolingual)
+            document.getElementById('activeQuestionText').innerText = isDe ? q.de_q : q.tr_q;
+            document.getElementById('activeAnswerText').innerText = isDe ? q.de_a : q.tr_a;
+
+            // Level Badge
+            const badgeEl = document.getElementById('cardLevelBadge');
+            if (q.level === 'beginner') {
+                badgeEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-lg font-bold bg-emerald-100 text-emerald-800 border border-emerald-200";
+                badgeEl.innerText = strings.badgeBeg;
+            } else if (q.level === 'intermediate') {
+                badgeEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-lg font-bold bg-amber-100 text-amber-800 border border-amber-200";
+                badgeEl.innerText = strings.badgeInt;
+            } else {
+                badgeEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-lg font-bold bg-rose-100 text-rose-800 border border-rose-200";
+                badgeEl.innerText = strings.badgeAdv;
+            }
+
+            document.getElementById('questionCounter').innerText = `${currentIndex + 1} / ${filteredQuestions.length}`;
+
+            // Vocabulary Chips
+            const vocabContainer = document.getElementById('vocabContainer');
+            vocabContainer.innerHTML = '';
+
+            const list = isDe ? q.de_vocab : q.tr_vocab;
+            if (list && Array.isArray(list) && list.length > 0) {
+                list.forEach(item => {
+                    const chip = document.createElement('div');
+                    chip.className = "px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 transition shadow-sm cursor-default";
+                    chip.innerText = item;
+                    vocabContainer.appendChild(chip);
+                });
+            } else {
+                vocabContainer.innerHTML = `<span class="text-xs text-slate-400 italic">${strings.emptyVocab}</span>`;
+            }
+
+            // Bookmark Star Icon
+            const starIcon = document.getElementById('bookmarkIcon');
+            if (favorites.includes(q.id)) {
+                starIcon.className = "fa-solid fa-star text-lg text-amber-400";
+            } else {
+                starIcon.className = "fa-regular fa-star text-lg text-slate-400";
+            }
+        }
+
+        // Navigation Controls
+        function nextQuestion() {
+            if (filteredQuestions.length === 0) return;
+            currentIndex = (currentIndex + 1) % filteredQuestions.length;
+            renderCard();
+        }
+
+        function prevQuestion() {
+            if (filteredQuestions.length === 0) return;
+            currentIndex = (currentIndex - 1 + filteredQuestions.length) % filteredQuestions.length;
+            renderCard();
+        }
+
+        function toggleCurrentBookmark() {
+            if (filteredQuestions.length === 0) return;
+            const q = filteredQuestions[currentIndex];
+            const idx = favorites.indexOf(q.id);
+            if (idx > -1) {
+                favorites.splice(idx, 1);
+            } else {
+                favorites.push(q.id);
+            }
+            localStorage.setItem('tandem_favs', JSON.stringify(favorites));
+            updateFavCount();
+            renderCard();
+        }
+
+        function updateFavCount() {
+            document.getElementById('favCount').innerText = favorites.length;
+        }
+
+        function updateDbTotalCount() {
+            document.getElementById('dbTotalCount').innerText = `Gesamt: ${currentQuestions.length} Fragen`;
+        }
+
+        function speakText() {
+            if (!('speechSynthesis' in window)) return;
+            if (filteredQuestions.length === 0) return;
+
+            window.speechSynthesis.cancel(); // Clear any queued utterances
+
+            const q = filteredQuestions[currentIndex];
+            const isTr = (currentLang === 'tr');
+            const textToSpeak = isTr ? q.tr_q : q.de_q;
+            const targetLangCode = isTr ? 'tr-TR' : 'de-DE';
+            const shortLangCode = isTr ? 'tr' : 'de';
+
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = targetLangCode;
+
+            // Fetch fresh voices if array is empty
+            if (availableVoices.length === 0) {
+                availableVoices = window.speechSynthesis.getVoices();
+            }
+
+            // Search strategies for target voice
+            let matchedVoice = availableVoices.find(v => v.lang === targetLangCode) ||
+                               availableVoices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith(targetLangCode.toLowerCase())) ||
+                               availableVoices.find(v => v.lang.toLowerCase().startsWith(shortLangCode));
+
+            if (matchedVoice) {
+                utterance.voice = matchedVoice;
+            }
+
+            utterance.rate = 0.88; // Slightly relaxed pace for clarity
+            utterance.pitch = 1.0;
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Modal Helpers
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.toggle('hidden');
+        }
+
+        function addNewQuestion(e) {
+            e.preventDefault();
+            const level = document.getElementById('newLevel').value;
+            const deQ = document.getElementById('newDeQ').value.trim();
+            const trQ = document.getElementById('newTrQ').value.trim();
+            const deA = document.getElementById('newDeA').value.trim();
+            const trA = document.getElementById('newTrA').value.trim();
+            const deVocabRaw = document.getElementById('newDeVocab').value.trim();
+            const trVocabRaw = document.getElementById('newTrVocab').value.trim();
+
+            const deVocab = deVocabRaw ? deVocabRaw.split(',').map(s => s.trim()) : [];
+            const trVocab = trVocabRaw ? trVocabRaw.split(',').map(s => s.trim()) : [];
+
+            const newObj = {
+                id: Date.now(),
+                level: level,
+                de_q: deQ,
+                tr_q: trQ,
+                de_a: deA,
+                tr_a: trA,
+                de_vocab: deVocab,
+                tr_vocab: trVocab
+            };
+
+            currentQuestions.push(newObj);
+            saveDatasetLocally();
+            applyFilters();
+            renderCard();
+            
+            document.getElementById('addQuestionForm').reset();
+            toggleModal('dataModal');
+        }
+
+        function exportData(format) {
+            let dataStr = "";
+            let filename = `tandem_questions.${format}`;
+
+            if (format === 'json') {
+                dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentQuestions, null, 2));
+            } else if (format === 'csv') {
+                let csv = "id,level,de_q,tr_q,de_a,tr_a,de_vocab,tr_vocab\n";
+                currentQuestions.forEach(q => {
+                    const deV = (q.de_vocab || []).join(';');
+                    const trV = (q.tr_vocab || []).join(';');
+                    csv += `"${q.id}","${q.level}","${q.de_q.replace(/"/g, '""')}","${q.tr_q.replace(/"/g, '""')}","${q.de_a.replace(/"/g, '""')}","${q.tr_a.replace(/"/g, '""')}","${deV}","${trV}"\n`;
+                });
+                dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+            }
+
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", filename);
+            dlAnchorElem.click();
+        }
+
+        function importJSON(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        currentQuestions = parsed;
+                        saveDatasetLocally();
+                        applyFilters();
+                        currentIndex = 0;
+                        renderCard();
+                        toggleModal('dataModal');
+                    }
+                } catch(err) {
+                    console.error("JSON import failed", err);
+                }
+            };
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0]);
+            }
+        }
+
+        function resetDataset() {
+            currentQuestions = [...DEFAULT_QUESTIONS];
+            localStorage.removeItem('tandem_questions_custom');
+            applyFilters();
+            currentIndex = 0;
+            renderCard();
+            updateDbTotalCount();
+        }
+    </script>
+</body>
+</html>
